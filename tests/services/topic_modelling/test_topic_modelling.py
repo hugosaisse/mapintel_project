@@ -8,7 +8,7 @@ import mlflow
 import mlflow.pyfunc
 import numpy as np
 from fastapi.testclient import TestClient
-from mapintel.services.service3.api.api_endpoint import app
+from mapintel.services.topic_modelling.api.api_endpoint import app
 from sklearn.decomposition import LatentDirichletAllocation as LDA
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.pipeline import Pipeline
@@ -47,19 +47,19 @@ def test_model():
             "The president has a 4 year term",
         ],
     )
-    artifacts = {"lda_model": "./tests/services/service3/model.pkl"}
+    artifacts = {"lda_model": "./tests/services/topic_modelling/model.pkl"}
     cloudpickle.dump(model, Path(artifacts["lda_model"]).open(mode="wb"))
     # removes data from previous tests
-    if os.path.exists("./tests/services/service3/model/"):
-        shutil.rmtree("./tests/services/service3/model/")
-    if os.path.exists("./tests/services/service3/model_get/"):
-        shutil.rmtree("./tests/services/service3/model_get/")
-    if os.path.exists("./tests/services/service3/model.zip"):
-        os.remove("./tests/services/service3/model.zip")
-    if os.path.exists("./tests/services/service3/model_get.zip"):
-        os.remove("./tests/services/service3/model_get.zip")
+    if os.path.exists("./tests/services/topic_modelling/model/"):
+        shutil.rmtree("./tests/services/topic_modelling/model/")
+    if os.path.exists("./tests/services/topic_modelling/model_get/"):
+        shutil.rmtree("./tests/services/topic_modelling/model_get/")
+    if os.path.exists("./tests/services/topic_modelling/model.zip"):
+        os.remove("./tests/services/topic_modelling/model.zip")
+    if os.path.exists("./tests/services/topic_modelling/model_get.zip"):
+        os.remove("./tests/services/topic_modelling/model_get.zip")
     # creates and saves mlflow model
-    mlflow_pyfunc_model_path = "./tests/services/service3/model/"
+    mlflow_pyfunc_model_path = "./tests/services/topic_modelling/model/"
     conda_env = {
         'channels': ['defaults'],
         'dependencies': [
@@ -82,17 +82,17 @@ def test_model():
         conda_env=conda_env,
     )
     # loads model from saved files
-    mlflow_model = mlflow.pyfunc.load_model("./tests/services/service3/model/")
+    mlflow_model = mlflow.pyfunc.load_model("./tests/services/topic_modelling/model/")
     # zips file
-    shutil.make_archive("./tests/services/service3/model", 'zip', "./tests/services/service3/model/")
-    with open("./tests/services/service3/model.zip", "rb") as f:
+    shutil.make_archive("./tests/services/topic_modelling/model", 'zip', "./tests/services/topic_modelling/model/")
+    with open("./tests/services/topic_modelling/model.zip", "rb") as f:
         response_post = client.post("http://localhost:8000/model", files={"file": ("filename", f, "application/zip")})
     # calls get request to fetch model that was just posted and stored
     response_get = client.get("http://localhost:8000/model", json={})
-    with open("./tests/services/service3/model_get.zip", "wb") as f:
+    with open("./tests/services/topic_modelling/model_get.zip", "wb") as f:
         f.write(response_get.content)
-    shutil.unpack_archive("./tests/services/service3/model_get.zip", "./tests/services/service3/model_get/", "zip")
-    mlflow_model_get = mlflow.pyfunc.load_model("./tests/services/service3/model_get/")
+    shutil.unpack_archive("./tests/services/topic_modelling/model_get.zip", "./tests/services/topic_modelling/model_get/", "zip")
+    mlflow_model_get = mlflow.pyfunc.load_model("./tests/services/topic_modelling/model_get/")
     assert mlflow_model == mlflow_model_get
     assert response_post.status_code == 200
     assert response_get.status_code == 200
